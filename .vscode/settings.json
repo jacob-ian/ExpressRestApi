@@ -1,4 +1,17 @@
 {
   "mocha.files.glob": "src/**/*.spec.ts",
-  "mocha.requires": [ "ts-node/register" ]
+  "mocha.requires": [ "ts-node/register" ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "coverage": true,
+    ".nyc_output": true
+  },
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
