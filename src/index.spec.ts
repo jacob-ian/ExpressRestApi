@@ -1,41 +1,51 @@
 import { Application } from '.';
 import assert from 'assert';
+import { fancy } from 'fancy-test';
 import fetch from 'node-fetch';
 
+let SERVER_PORT = '8000';
 describe('Application Tests', function () {
-  let SERVER_PORT = 4000;
-  let application = new Application(SERVER_PORT);
-
   describe('Application Environment Config', function () {
-    it("Should log '✅ Local Config Loaded.'", function () {});
+    describe('Development Environment', function () {
+      fancy
+        .env({ NODE_ENV: 'development', PORT: SERVER_PORT })
+        .stdout()
+        .it("Should log '✅ Local Config Loaded.'", (output) => {
+          new Application();
+          assert.strictEqual(output.stdout, '✅ Local Config Loaded.\n');
+        });
+    });
+
+    describe('Production Environment', function () {
+      fancy
+        .env({ NODE_ENV: 'production', PORT: SERVER_PORT })
+        .stdout()
+        .it("Should not log '✅ Local Config Loaded.'", (output) => {
+          new Application();
+          assert.strictEqual(output.stdout, '');
+        });
+    });
   });
 
   describe('Application Startup', function () {
-    before(function () {
-      startApplication(application);
-    });
+    fancy
+      .env({ NODE_ENV: 'development', PORT: SERVER_PORT })
+      .stdout()
+      .it("GET '/' should respond with 200 Status.", (ctx, done) => {
+        let application = new Application();
+        application.start();
 
-    it('GET "/" should respond with 200 Status.', async function () {
-      let responseStatusCode = await getServerStatus(SERVER_PORT);
-      assert.strictEqual(responseStatusCode, 200);
-    });
-
-    after(function () {
-      stopApplication(application);
-    });
+        getServerStatus().then((statusCode) => {
+          application.stop();
+          assert.strictEqual(statusCode, 200);
+          done();
+        });
+      });
   });
 });
 
-function startApplication(application: Application) {
-  application.start();
-}
-
-async function getServerStatus(serverPort: number): Promise<number> {
-  return fetch(`http://localhost:${serverPort}`).then((res) => {
+async function getServerStatus(): Promise<number> {
+  return fetch(`http://localhost:${SERVER_PORT}`).then((res) => {
     return res.status;
   });
-}
-
-function stopApplication(application: Application) {
-  application.stop();
 }
