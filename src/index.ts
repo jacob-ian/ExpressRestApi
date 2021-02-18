@@ -12,11 +12,11 @@ import { config as loadConfig } from 'dotenv';
 export class Application {
   private server: Server;
 
-  constructor(externalPort?: number) {
+  constructor() {
     if (this.isDevelopmentEnvironment()) {
       this.loadConfigFromFile();
     }
-    let EXTERNAL_PORT = externalPort ? externalPort : this.getExternalPort();
+    let EXTERNAL_PORT = this.getExternalPort();
     this.server = new Server(EXTERNAL_PORT);
   }
 
@@ -34,7 +34,7 @@ export class Application {
   }
 
   private getExternalPort(): number {
-    return process.env.PORT ? parseInt(process.env.PORT) : 80;
+    return process.env.PORT ? parseInt(process.env.PORT) : 4000;
   }
 
   public start(): void {
