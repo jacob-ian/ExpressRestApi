@@ -1,6 +1,4 @@
 {
-  "mocha.files.glob": "src/**/*.spec.ts",
-  "mocha.requires": [ "ts-node/register" ],
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -13,5 +11,6 @@
   "[typescript]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "mochaExplorer.files": "src/**/*.spec.{t,j}s"
 }
