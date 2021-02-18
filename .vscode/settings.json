@@ -12,5 +12,5 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "mochaExplorer.files": "src/**/*.spec.{t,j}s"
+  "mochaExplorer.files": "src/**/*.spec.{t,j}s",
 }
