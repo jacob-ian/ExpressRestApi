@@ -3,12 +3,12 @@ import assert from 'assert';
 import { fancy } from 'fancy-test';
 import fetch from 'node-fetch';
 
-let SERVER_PORT = '8000';
+const SERVER_PORT = '8000';
 describe('Application Tests', function () {
   describe('Application Environment Config', function () {
     describe('Development Environment', function () {
       fancy
-        .env({ NODE_ENV: 'development', PORT: SERVER_PORT })
+        .env({ NODE_ENV: 'development' })
         .stdout()
         .it("Should log '✅ Local Config Loaded.'", (output) => {
           new Application();
@@ -32,7 +32,7 @@ describe('Application Tests', function () {
       .env({ NODE_ENV: 'development', PORT: SERVER_PORT })
       .stdout()
       .it("GET '/' should respond with 200 Status.", (ctx, done) => {
-        let application = new Application();
+        const application = new Application();
         application.start();
 
         getServerStatus().then((statusCode) => {

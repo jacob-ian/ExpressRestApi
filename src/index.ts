@@ -16,7 +16,7 @@ export class Application {
     if (this.isDevelopmentEnvironment()) {
       this.loadConfigFromFile();
     }
-    let EXTERNAL_PORT = this.getExternalPort();
+    const EXTERNAL_PORT = this.getExternalPort();
     this.server = new Server(EXTERNAL_PORT);
   }
 
@@ -46,5 +46,5 @@ export class Application {
   }
 }
 
-let application = new Application();
+const application = new Application();
 application.start();
