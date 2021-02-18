@@ -35,7 +35,7 @@ export class Server {
   }
 
   private logServerStarted(): void {
-    console.log('Server is listening.');
+    console.log(`🌐 Server is listening on port: ${this.EXTERNAL_PORT}`);
   }
 
   public stop(): void {
@@ -44,6 +44,6 @@ export class Server {
   }
 
   private logServerStopped(): void {
-    console.log('Server has been closed.');
+    console.log('🛑 Server has been stopped.');
   }
 }
