@@ -33,7 +33,7 @@ export class Application {
     console.log('✅ Local Config Loaded.');
   }
 
-  private getExternalPort(): number {
+  public getExternalPort(): number {
     return process.env.PORT ? parseInt(process.env.PORT) : 4000;
   }
 
