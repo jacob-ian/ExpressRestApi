@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Router } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { ApiRoute } from './routes/api-route';
 
 export class Server {
   private EXTERNAL_PORT: number;
@@ -17,7 +18,7 @@ export class Server {
 
   private setUpMiddleware(): void {
     this.connectThirdPartyMiddleware();
-    this.connectApiRoutes();
+    this.createApiRoutes();
   }
 
   private connectThirdPartyMiddleware(): void {
@@ -25,15 +26,30 @@ export class Server {
     this.express.use(bodyParser.urlencoded({ extended: true }));
   }
 
-  private connectApiRoutes(): void {
+  private createApiRoutes(): void {
+    this.createBaseRoute();
+    this.createRoute('dogs');
+    this.createRoute('cats');
+  }
+
+  private createBaseRoute(): void {
     this.express.get('/', (req, res) => {
       return res.status(200).send();
     });
   }
 
-  public start(callback?: () => void): void {
+  private createRoute(routeUrl: string): void {
+    this.express.use('/', this.createApiRouteWithUrl(routeUrl));
+  }
+
+  private createApiRouteWithUrl(routeUrl: string): Router {
+    let apiRoute = new ApiRoute(routeUrl);
+    return apiRoute.getRouter();
+  }
+
+  public start(onCompleteFn?: () => void): void {
     if (this.serverIsInactive()) {
-      this.startServerListening(callback);
+      this.startServerListening(onCompleteFn);
     }
   }
 
@@ -41,17 +57,21 @@ export class Server {
     return !this.isServerActive;
   }
 
-  private startServerListening(callback?: () => void): void {
+  private startServerListening(onCompleteFn?: () => void): void {
     this.server = this.express.listen(this.EXTERNAL_PORT, () => {
       this.isServerActive = true;
-      this.notifyServerStart();
-      if (callback) {
-        callback();
-      }
+      this.notifyServerListening();
+      this.callOnCompleteFn(onCompleteFn);
     });
   }
 
-  private notifyServerStart(): void {
+  private callOnCompleteFn(onCompleteFn?: () => void): void {
+    if (onCompleteFn) {
+      onCompleteFn();
+    }
+  }
+
+  private notifyServerListening(): void {
     this.logServerStarted();
   }
 
@@ -59,9 +79,9 @@ export class Server {
     console.log(`🌐 Server is listening on port: ${this.EXTERNAL_PORT}.`);
   }
 
-  public stop(callback?: () => void): void {
+  public stop(onCompleteFn?: () => void): void {
     if (this.serverIsActive()) {
-      this.stopServerListening(callback);
+      this.stopServerListening(onCompleteFn);
     }
   }
 
@@ -69,13 +89,11 @@ export class Server {
     return this.isServerActive;
   }
 
-  private stopServerListening(callback?: () => void): void {
+  private stopServerListening(onCompleteFn?: () => void): void {
     return this.server.close(() => {
       this.isServerActive = false;
       this.notifyServerStopped();
-      if (callback) {
-        callback();
-      }
+      this.callOnCompleteFn(onCompleteFn);
     });
   }
 
