@@ -1,4 +1,4 @@
-import { stat, remove } from 'fs-extra';
+import { stat, remove, readJson, writeFile, WriteFileOptions } from 'fs-extra';
 import { FileSystemException } from './file-system-exception';
 
 export class FileSystem {
@@ -27,10 +27,23 @@ export class FileSystem {
     }
   }
 
-  public async readJsonFile(path: string): Promise<any> {}
+  public async readJsonFile(path: string): Promise<any> {
+    try {
+      return await readJson(path);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        throw new FileSystemException('not-found', err.message);
+      } else {
+        throw new FileSystemException('unknown', err.message);
+      }
+    }
+  }
 
-  public async writeToFile(
-    path: string,
-    data: string | Buffer
-  ): Promise<void> {}
+  public async writeToFile(path: string, data: any): Promise<void> {
+    try {
+      return await writeFile(path, data);
+    } catch (err) {
+      throw new FileSystemException('unknown', err.message);
+    }
+  }
 }

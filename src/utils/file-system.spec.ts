@@ -2,40 +2,28 @@ import { FileSystem } from './file-system';
 import { FileSystemException } from './file-system-exception';
 import assert from 'assert';
 import { writeFileSync } from 'fs';
-import { writeFile } from 'fs-extra';
 
 describe('FileSystem tests', function () {
+  let testFile = `${process.cwd()}/test/file.json`;
+  let testFileObject = { test: 'yo' };
+  let testFileContents = JSON.stringify(testFileObject);
+  let fs = new FileSystem();
   describe('Test fileExists()', function () {
     let testFileTrue = `${process.cwd()}/src/utils/file-system.spec.ts`;
     let testFileFalse = `${process.cwd()}/src/utils/this-is-fake.ts`;
 
-    let fs = new FileSystem();
-
     it('Should return true (file actually exists)', async function () {
-      try {
-        let exists = await fs.fileExists(testFileTrue);
-        assert.deepStrictEqual(exists, true);
-      } catch (err) {
-        logError(err);
-      }
+      await assertFileExists(testFileTrue, fs, true);
     });
 
     it("Should return false (file doesn't exist)", async function () {
-      try {
-        let exists = await fs.fileExists(testFileFalse);
-        assert.deepStrictEqual(exists, false);
-      } catch (err) {
-        logError(err);
-      }
+      await assertFileExists(testFileFalse, fs, false);
     });
   });
 
   describe('Test deleteFile()', function () {
-    let testFile = `${process.cwd()}/test/file.txt`;
-    let fs = new FileSystem();
-
     before(function () {
-      createTestFile(testFile);
+      createTestFile(testFile, testFileContents);
     });
 
     it("File shouldn't exist after call.", async function () {
@@ -44,8 +32,63 @@ describe('FileSystem tests', function () {
           await assertFileDeleted(fs, testFile);
         });
       } catch (err) {
-        logError(err);
+        throw err;
       }
+    });
+
+    it("Should throw a 'not-found' error.", async function () {
+      let expectedError = new FileSystemException('not-found', '');
+
+      assert.rejects(async () => {
+        fs.deleteFile('asdkjlkwnekjw.ts');
+      }, expectedError);
+    });
+  });
+
+  describe('Test readJsonFile()', async function () {
+    before(function () {
+      createTestFile(testFile, testFileContents);
+    });
+
+    after(async function () {
+      await deleteTestFile(testFile);
+    });
+
+    it('Should return the testFileObject', async function () {
+      try {
+        let actualObject = await fs.readJsonFile(testFile);
+        assert.deepStrictEqual(actualObject, testFileObject);
+      } catch (err) {
+        throw err;
+      }
+    });
+
+    it('Should throw a "not-found" error', async function () {
+      let expectedError = new FileSystemException(
+        'not-found',
+        `ENOENT: no such file or directory, open '${testFile}'`
+      );
+      return await assert.rejects(async () => {
+        await fs.readJsonFile(testFile);
+      }, expectedError);
+    });
+  });
+
+  describe('Test writeToFile()', function () {
+    before(async function () {
+      return await deleteTestFile(testFile);
+    });
+
+    it('Should create the test file and write to it.', async function () {
+      return fs
+        .writeToFile(testFile, testFileContents)
+        .then(() => {
+          let exists = testFileExists(testFile);
+          assert.deepStrictEqual(exists, true);
+        })
+        .catch((err) => {
+          throw err;
+        });
     });
   });
 });
@@ -58,11 +101,42 @@ function logError(err: any): void {
   }
 }
 
-function createTestFile(path: string): void {
+function createTestFile(path: string, testFileContents: string): void {
   try {
-    writeFileSync(path, 'test');
+    writeFileSync(path, testFileContents);
   } catch (err) {
-    logError(err);
+    throw err;
+  }
+}
+
+async function deleteTestFile(path: string): Promise<void> {
+  try {
+    let fs = new FileSystem();
+    return await fs.deleteFile(path);
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function testFileExists(path: string): Promise<boolean | undefined> {
+  try {
+    let fs = new FileSystem();
+    return await fs.fileExists(path);
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function assertFileExists(
+  path: string,
+  fs: FileSystem,
+  assertion: boolean
+) {
+  try {
+    let exists = await fs.fileExists(path);
+    assert.deepStrictEqual(exists, assertion);
+  } catch (err) {
+    throw err;
   }
 }
 
@@ -71,6 +145,6 @@ async function assertFileDeleted(fs: FileSystem, path: string): Promise<void> {
     let exists = await fs.fileExists(path);
     assert.deepStrictEqual(exists, false);
   } catch (err) {
-    logError(err);
+    throw err;
   }
 }
