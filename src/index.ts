@@ -7,7 +7,7 @@ import { Server } from './server/server';
 import { config as loadConfig } from 'dotenv';
 
 /**
- * The REST API Server.
+ * The REST API Application.
  */
 export class Application {
   private server: Server;
