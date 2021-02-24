@@ -1,35 +1,33 @@
 import { FileSystem } from './file-system';
 import { FileSystemException } from './file-system-exception';
 import assert from 'assert';
-import { writeFileSync } from 'fs';
+import { outputFile } from 'fs-extra';
+
+let { testFile, testFileContents, testFileObject } = getTestObject();
 
 describe('FileSystem tests', function () {
-  let testFile = `${process.cwd()}/test/file.json`;
-  let testFileObject = { test: 'yo' };
-  let testFileContents = JSON.stringify(testFileObject);
-  let fs = new FileSystem();
   describe('Test fileExists()', function () {
     let testFileTrue = `${process.cwd()}/src/utils/file-system.spec.ts`;
-    let testFileFalse = `${process.cwd()}/src/utils/this-is-fake.ts`;
+    let testFileFalse = `${testFileTrue}x`;
 
     it('Should return true (file actually exists)', async function () {
-      await assertFileExists(testFileTrue, fs, true);
+      await assertFileExists(testFileTrue, true);
     });
 
     it("Should return false (file doesn't exist)", async function () {
-      await assertFileExists(testFileFalse, fs, false);
+      await assertFileExists(testFileFalse, false);
     });
   });
 
   describe('Test deleteFile()', function () {
     before(function () {
-      createTestFile(testFile, testFileContents);
+      prepareTestFile();
     });
 
     it("File shouldn't exist after call.", async function () {
       try {
-        fs.deleteFile(testFile).then(async () => {
-          await assertFileDeleted(fs, testFile);
+        FileSystem.deleteFile(testFile).then(async () => {
+          await assertFileDeleted(testFile);
         });
       } catch (err) {
         throw err;
@@ -40,23 +38,19 @@ describe('FileSystem tests', function () {
       let expectedError = new FileSystemException('not-found', '');
 
       assert.rejects(async () => {
-        fs.deleteFile('asdkjlkwnekjw.ts');
+        FileSystem.deleteFile('asdkjlkwnekjw.ts');
       }, expectedError);
     });
   });
 
-  describe('Test readJsonFile()', async function () {
-    before(function () {
-      createTestFile(testFile, testFileContents);
-    });
-
-    after(async function () {
-      await deleteTestFile(testFile);
+  describe('Test readJsonFile()', function () {
+    before(async function () {
+      return await prepareTestFile().catch((err) => console.error(err));
     });
 
     it('Should return the testFileObject', async function () {
       try {
-        let actualObject = await fs.readJsonFile(testFile);
+        let actualObject = await FileSystem.readJsonFile(testFile);
         assert.deepStrictEqual(actualObject, testFileObject);
       } catch (err) {
         throw err;
@@ -64,55 +58,104 @@ describe('FileSystem tests', function () {
     });
 
     it('Should throw a "not-found" error', async function () {
+      let fakePath = `${testFile}fake`;
+
       let expectedError = new FileSystemException(
         'not-found',
-        `ENOENT: no such file or directory, open '${testFile}'`
+        `ENOENT: no such file or directory, open '${fakePath}'`
       );
       return await assert.rejects(async () => {
-        await fs.readJsonFile(testFile);
+        await FileSystem.readJsonFile(fakePath);
       }, expectedError);
+    });
+
+    after(async function () {
+      return await deleteTestFile(testFile);
     });
   });
 
-  describe('Test writeToFile()', function () {
-    before(async function () {
-      return await deleteTestFile(testFile);
+  describe('Test outputJsonFile()', function () {
+    describe('Test creating the file and writing to it.', function () {
+      before(async function () {
+        return await deleteTestFile(testFile);
+      });
+
+      after(async function () {
+        return await deleteTestFile(testFile);
+      });
+
+      it('Should return the JSON object when read.', async function () {
+        return FileSystem.outputJsonFile(testFile, testFileContents)
+          .then(async () => {
+            let json = await FileSystem.readJsonFile(testFile);
+            assert.deepStrictEqual(json, testFileContents);
+          })
+          .catch((err) => console.error(err));
+      });
     });
 
-    it('Should create the test file and write to it.', async function () {
-      return fs
-        .writeToFile(testFile, testFileContents)
-        .then(() => {
-          let exists = testFileExists(testFile);
-          assert.deepStrictEqual(exists, true);
-        })
-        .catch((err) => {
-          throw err;
-        });
+    describe('Test writing to an existing file.', function () {
+      before(async function () {
+        return await prepareTestFile();
+      });
+
+      after(async function () {
+        return await deleteTestFile(testFile);
+      });
+
+      let newTestData = { new: 'test' };
+
+      it('Should return the new test data.', async function () {
+        return FileSystem.outputJsonFile(testFile, newTestData)
+          .then(async () => {
+            let json = await FileSystem.readJsonFile(testFile);
+            assert.deepStrictEqual(json, newTestData);
+          })
+          .catch((err) => console.error(err));
+      });
     });
   });
 });
 
-function logError(err: any): void {
-  if (err instanceof FileSystemException) {
-    console.error(err.getMessage());
-  } else {
-    console.error(err);
+function getTestObject(): {
+  testFile: string;
+  testFileObject: any;
+  testFileContents: string;
+} {
+  let testFile = `${process.cwd()}/test/file.json`;
+  let testFileObject = { test: 'yo' };
+  let testFileContents = JSON.stringify(testFileObject);
+  return { testFile, testFileObject, testFileContents };
+}
+
+async function prepareTestFile(): Promise<void> {
+  return createTestFile().then(async () => {
+    return await verifyTestFile();
+  });
+}
+
+async function createTestFile(): Promise<void> {
+  try {
+    return await outputFile(testFile, testFileContents);
+  } catch (err) {
+    throw `Could not create test file. ${err.message}.`;
   }
 }
 
-function createTestFile(path: string, testFileContents: string): void {
+async function verifyTestFile(): Promise<void> {
   try {
-    writeFileSync(path, testFileContents);
+    let exists = await FileSystem.fileExists(testFile);
+    if (!exists) {
+      throw `Test file was not created during test preparation.`;
+    }
   } catch (err) {
-    throw err;
+    throw `Could not verify test file existence. ${err.message}.`;
   }
 }
 
 async function deleteTestFile(path: string): Promise<void> {
   try {
-    let fs = new FileSystem();
-    return await fs.deleteFile(path);
+    return await FileSystem.deleteFile(path);
   } catch (err) {
     throw err;
   }
@@ -120,29 +163,24 @@ async function deleteTestFile(path: string): Promise<void> {
 
 async function testFileExists(path: string): Promise<boolean | undefined> {
   try {
-    let fs = new FileSystem();
-    return await fs.fileExists(path);
+    return await FileSystem.fileExists(path);
   } catch (err) {
     throw err;
   }
 }
 
-async function assertFileExists(
-  path: string,
-  fs: FileSystem,
-  assertion: boolean
-) {
+async function assertFileExists(path: string, assertion: boolean) {
   try {
-    let exists = await fs.fileExists(path);
+    let exists = await FileSystem.fileExists(path);
     assert.deepStrictEqual(exists, assertion);
   } catch (err) {
     throw err;
   }
 }
 
-async function assertFileDeleted(fs: FileSystem, path: string): Promise<void> {
+async function assertFileDeleted(path: string): Promise<void> {
   try {
-    let exists = await fs.fileExists(path);
+    let exists = await FileSystem.fileExists(path);
     assert.deepStrictEqual(exists, false);
   } catch (err) {
     throw err;

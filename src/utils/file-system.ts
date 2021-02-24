@@ -1,8 +1,8 @@
-import { stat, remove, readJson, writeFile, WriteFileOptions } from 'fs-extra';
+import { stat, remove, readJson, outputJSON, outputJson } from 'fs-extra';
 import { FileSystemException } from './file-system-exception';
 
 export class FileSystem {
-  public async fileExists(path: string): Promise<boolean> {
+  public static async fileExists(path: string): Promise<boolean> {
     try {
       let stats = await stat(path);
       return !!stats;
@@ -15,7 +15,7 @@ export class FileSystem {
     }
   }
 
-  public async deleteFile(path: string): Promise<void> {
+  public static async deleteFile(path: string): Promise<void> {
     try {
       return await remove(path);
     } catch (err) {
@@ -27,7 +27,7 @@ export class FileSystem {
     }
   }
 
-  public async readJsonFile(path: string): Promise<any> {
+  public static async readJsonFile(path: string): Promise<any> {
     try {
       return await readJson(path);
     } catch (err) {
@@ -39,9 +39,9 @@ export class FileSystem {
     }
   }
 
-  public async writeToFile(path: string, data: any): Promise<void> {
+  public static async outputJsonFile(path: string, data: any): Promise<void> {
     try {
-      return await writeFile(path, data);
+      return await outputJson(path, data);
     } catch (err) {
       throw new FileSystemException('unknown', err.message);
     }
