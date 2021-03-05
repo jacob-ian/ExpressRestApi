@@ -1,7 +1,6 @@
 import express, { Router } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { ApiRoute } from './routes/api-route';
 
 export class Server {
   private EXTERNAL_PORT: number;
@@ -27,24 +26,7 @@ export class Server {
   }
 
   private createApiRoutes(): void {
-    this.createBaseRoute();
-    this.createRoute('dogs');
-    this.createRoute('cats');
-  }
-
-  private createBaseRoute(): void {
-    this.express.get('/', (req, res) => {
-      return res.status(200).send();
-    });
-  }
-
-  private createRoute(routeUrl: string): void {
-    this.express.use('/', this.createApiRouteWithUrl(routeUrl));
-  }
-
-  private createApiRouteWithUrl(routeUrl: string): Router {
-    let apiRoute = new ApiRoute(routeUrl);
-    return apiRoute.getRouter();
+    return;
   }
 
   public start(onCompleteFn?: () => void): void {

@@ -1,11 +1,12 @@
+import { Request, Response } from 'express';
 export class Controller {
-  public getList(req: Express.Request, res: Express.Response): void {}
+  public getList(req: Request, res: Response): void {}
 
-  public getById(req: Express.Request, res: Express.Response): void {}
+  public getById(req: Request, res: Response): void {}
 
-  public create(req: Express.Request, res: Express.Response): void {}
+  public create(req: Request, res: Response): void {}
 
-  public updateById(req: Express.Request, res: Express.Response): void {}
+  public updateById(req: Request, res: Response): void {}
 
-  public deleteById(req: Express.Request, res: Express.Response): void {}
+  public deleteById(req: Request, res: Response): void {}
 }
